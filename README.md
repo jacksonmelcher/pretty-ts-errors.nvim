@@ -15,7 +15,7 @@ A Neovim plugin that enhances TypeScript error messages to make them more readab
 
 ```lua
 return {
-  "your-username/pretty-ts-errors.nvim",
+  "jackson-melcher/pretty-ts-errors.nvim",
   ft = { "typescript", "javascript", "typescriptreact", "javascriptreact" },
   opts = {
     -- Your configuration options here (optional)
