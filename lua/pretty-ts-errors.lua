@@ -6,16 +6,13 @@ local M = {}
 -- Default configuration
 M.config = {
   -- Whether to enable the plugin by default
-  enabled = false,
+  auto_show_on_cursor = false,
 
   -- Maximum height of the error window
   max_height = 15,
 
   -- Maximum width of the error window
   max_width = 80,
-
-  -- Whether to automatically show errors when cursor is on them
-  auto_show_on_cursor = false,
 
   -- Whether to show original TS error below the prettified version
   show_original_error = true,
@@ -84,7 +81,7 @@ M.config = {
 
 -- Current state
 local state = {
-  enabled = false,
+  auto_show_on_cursor = false,
   diagnostics_ns = nil,
   error_win = nil,
   error_buf = nil,
@@ -304,7 +301,7 @@ end
 -- Process diagnostics and show window if appropriate
 local function process_diagnostics()
   -- If disabled or not on a TS/JS file, ignore
-  if not state.enabled then return end
+  if not state.auto_show_on_cursor then return end
 
   local bufnr = vim.api.nvim_get_current_buf()
   local ft = vim.bo[bufnr].filetype
@@ -367,21 +364,10 @@ function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
   -- Set initial state
-  state.enabled = M.config.enabled
+  state.auto_show_on_cursor = M.config.auto_show_on_cursor
 
   -- Create autocommands
   vim.api.nvim_create_augroup("PrettyTsErrors", { clear = true })
-
-  -- Only set up auto-popup if enabled
-  if M.config.auto_show_on_cursor then
-    -- Update on cursor movement
-    vim.api.nvim_create_autocmd({ "CursorMoved", "CursorHold" }, {
-      group = "PrettyTsErrors",
-      callback = function()
-        process_diagnostics()
-      end,
-    })
-  end
 
   -- Add LSP integration if enabled
   if M.config.integrate_with_lsp ~= false then
@@ -408,20 +394,20 @@ function M.setup(opts)
 
   -- Toggle command
   vim.api.nvim_create_user_command("PrettyTsErrorsToggle", function()
-    state.enabled = not state.enabled
-    if not state.enabled then
+    state.auto_show_on_cursor = not state.auto_show_on_cursor
+    if not state.auto_show_on_cursor then
       close_error_window()
     else
       process_diagnostics()
     end
-    print("Pretty TS Errors: " .. (state.enabled and "Enabled" or "Disabled"))
+    print("Pretty TS Errors: " .. (state.auto_show_on_cursor and "Enabled" or "Disabled"))
   end, {})
 
   -- Format complex types
   vim.api.nvim_create_autocmd("DiagnosticChanged", {
     group = "PrettyTsErrors",
     callback = function()
-      if state.enabled then
+      if state.auto_show_on_cursor then
         vim.defer_fn(process_diagnostics, 100)
       end
     end,
@@ -466,13 +452,13 @@ end
 
 -- Toggle plugin on/off
 function M.toggle()
-  state.enabled = not state.enabled
-  if not state.enabled then
+  state.auto_show_on_cursor = not state.auto_show_on_cursor
+  if not state.auto_show_on_cursor then
     close_error_window()
   else
     process_diagnostics()
   end
-  return state.enabled
+  return state.auto_show_on_cursor
 end
 
 return M
